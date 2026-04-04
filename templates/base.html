@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ProyControl UTP{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="navbar-logo">&#9654;</span>
+      ProyControl <span class="navbar-sub">UTP Arequipa</span>
+    </div>
+    <nav class="navbar-links">
+      {% block nav %}{% endblock %}
+    </nav>
+  </header>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    ProyControl UTP &mdash; Sistema de control de proyectores
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

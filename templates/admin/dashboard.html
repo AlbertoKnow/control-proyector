@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Admin — ProyControl{% endblock %}
+
+{% block nav %}
+  <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Panel de Administración</h1>
+  <div class="header-actions">
+    <span class="badge-total">{{ total }} proyector{{ 'es' if total != 1 else '' }}</span>
+    <button id="btn-scan" class="btn btn-primary" onclick="triggerScan()">
+      <span id="scan-icon">&#128269;</span> Escanear red
+    </button>
+  </div>
+</div>
+
+<div id="scan-result" class="alert" style="display:none"></div>
+
+{% for campus_name, projectors in grouped.items() %}
+<section class="campus-section">
+  <h2 class="campus-title">
+    {{ campus_name }}
+    <span class="campus-count">{{ projectors|length }}</span>
+  </h2>
+
+  {% if projectors %}
+  <div class="projector-grid">
+    {% for p in projectors %}
+    <div class="projector-card status-{{ p.status or 'unknown' }}" id="card-{{ p.id }}">
+      <div class="card-header">
+        <span class="status-dot"></span>
+        <span class="card-title">
+          {{ p.classroom_name or 'Sin aula' }}
+        </span>
+        <a href="{{ url_for('admin.projector_detail', projector_id=p.id) }}"
+           class="card-link" title="Ver detalle">&#9881;</a>
+      </div>
+
+      <div class="card-body">
+        <div class="card-info">
+          <span class="info-label">IP</span>
+          <span class="info-value">{{ p.current_ip or '—' }}</span>
+        </div>
+        <div class="card-info">
+          <span class="info-label">MAC</span>
+          <span class="info-value mono">{{ p.mac_address or '—' }}</span>
+        </div>
+        <div class="card-info">
+          <span class="info-label">Modelo</span>
+          <span class="info-value">{{ p.brand or '' }} {{ p.model or '—' }}</span>
+        </div>
+        <div class="card-info">
+          <span class="info-label">Estado</span>
+          <span class="status-label" id="status-{{ p.id }}">
+            {{ {'on':'Encendido','off':'Apagado','cooling':'Enfriando','warming':'Calentando'}.get(p.status, 'Desconocido') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn btn-on"
+                onclick="powerAction({{ p.id }}, 'on')"
+                {% if p.status in ('on','warming') %}disabled{% endif %}>
+          Encender
+        </button>
+        <button class="btn btn-off"
+                onclick="powerAction({{ p.id }}, 'off')"
+                {% if p.status in ('off','cooling','unknown') %}disabled{% endif %}>
+          Apagar
+        </button>
+        <button class="btn btn-secondary btn-sm"
+                onclick="refreshStatus({{ p.id }})">
+          &#8635;
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-msg">No hay proyectores en este campus.</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+  // Auto-refresh de estados cada 30 segundos
+  setInterval(refreshAllStatuses, 30000);
+</script>
+{% endblock %}

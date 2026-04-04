@@ -1,0 +1,155 @@
+/* =========================================================
+   ProyControl UTP — Vista docente
+   Optimizada para pantallas táctiles y uso rápido
+   ========================================================= */
+
+.teacher-body {
+  background: #0f172a;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.teacher-container {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+/* --- Encabezado --- */
+.teacher-header {
+  text-align: center;
+  color: #e2e8f0;
+}
+.teacher-logo {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: .05em;
+  margin-bottom: .4rem;
+}
+.teacher-room {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  line-height: 1.1;
+}
+
+/* --- Estado --- */
+.teacher-status-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.teacher-status {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1.5rem;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  transition: background .3s, color .3s;
+}
+.teacher-status-icon { font-size: 1.4rem; line-height: 1; }
+
+.teacher-status.status-on      { background: #14532d; color: #86efac; }
+.teacher-status.status-off     { background: #1f1f1f; color: #9ca3af; }
+.teacher-status.status-warming,
+.teacher-status.status-cooling { background: #451a03; color: #fcd34d; }
+.teacher-status.status-unknown { background: #1e293b; color: #64748b; }
+.teacher-status.status-error   { background: #450a0a; color: #fca5a5; }
+
+/* --- Feedback de acción --- */
+.teacher-feedback {
+  width: 100%;
+  text-align: center;
+  padding: .7rem 1rem;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-weight: 600;
+}
+.teacher-feedback.fb-success { background: #14532d; color: #86efac; }
+.teacher-feedback.fb-error   { background: #450a0a; color: #fca5a5; }
+.teacher-feedback.fb-loading { background: #1e3a5f; color: #93c5fd; }
+
+/* --- Botones principales --- */
+.teacher-controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.teacher-btn {
+  width: 100%;
+  padding: 1.4rem 1rem;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  transition: transform .1s, opacity .2s, filter .2s;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: .02em;
+}
+.teacher-btn:active:not(:disabled) {
+  transform: scale(.97);
+}
+.teacher-btn:disabled {
+  opacity: .25;
+  cursor: not-allowed;
+  filter: grayscale(.6);
+}
+
+.teacher-btn-icon { font-size: 1.5rem; line-height: 1; }
+
+.teacher-btn-on {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(22, 163, 74, .4);
+}
+.teacher-btn-on:hover:not(:disabled) {
+  background: linear-gradient(135deg, #15803d, #166534);
+}
+
+.teacher-btn-off {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, .4);
+}
+.teacher-btn-off:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
+
+/* --- Pie de info --- */
+.teacher-hint {
+  color: #475569;
+  font-size: .8rem;
+  text-align: center;
+}
+
+/* --- Spinner dentro del botón --- */
+.teacher-spinner {
+  display: inline-block;
+  width: 22px; height: 22px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+
+/* --- Responsive: pantallas muy pequeñas --- */
+@media (max-width: 380px) {
+  .teacher-room   { font-size: 1.6rem; }
+  .teacher-btn    { font-size: 1.15rem; padding: 1.2rem 1rem; }
+}

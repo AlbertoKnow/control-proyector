@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>
+    {% if classroom %}{{ classroom.display_name }}{% else %}Aula {{ classroom_number }}{% endif %}
+    — ProyControl
+  </title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}" />
+</head>
+<body class="teacher-body">
+
+  <div class="teacher-container">
+
+    <!-- Encabezado -->
+    <header class="teacher-header">
+      <div class="teacher-logo">&#9654; ProyControl</div>
+      <h1 class="teacher-room">
+        {% if classroom %}
+          {{ classroom.display_name }}
+        {% else %}
+          Aula {{ classroom_number }}
+        {% endif %}
+      </h1>
+    </header>
+
+    <!-- Estado del proyector -->
+    <div class="teacher-status-wrap" id="status-wrap">
+      {% if error %}
+        <div class="teacher-status status-error">
+          <span class="teacher-status-icon">&#9888;</span>
+          <span>{{ error }}</span>
+        </div>
+
+      {% elif not projector %}
+        <div class="teacher-status status-unknown">
+          <span class="teacher-status-icon">&#128247;</span>
+          <span>No hay proyector asignado a esta aula</span>
+        </div>
+
+      {% else %}
+        <div class="teacher-status status-{{ projector.status or 'unknown' }}" id="status-display">
+          <span class="teacher-status-icon" id="status-icon">
+            {% if projector.status == 'on' %}&#9728;
+            {% elif projector.status == 'off' %}&#9647;
+            {% elif projector.status in ('warming', 'cooling') %}&#9203;
+            {% else %}&#63;
+            {% endif %}
+          </span>
+          <span id="status-text">
+            {% set labels = {'on':'Encendido','off':'Apagado','warming':'Calentando…','cooling':'Enfriando…','unknown':'Estado desconocido'} %}
+            {{ labels.get(projector.status, 'Estado desconocido') }}
+          </span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Feedback de acción -->
+    <div id="action-feedback" class="teacher-feedback" style="display:none"></div>
+
+    <!-- Botones de control -->
+    {% if projector and not error %}
+    <div class="teacher-controls" id="controls">
+      <button
+        id="btn-on"
+        class="teacher-btn teacher-btn-on"
+        onclick="teacherPower('on')"
+        {% if projector.status in ('on', 'warming') %}disabled{% endif %}
+        data-projector-id="{{ projector.id }}"
+        data-classroom="{{ classroom_number }}"
+      >
+        <span class="teacher-btn-icon">&#9654;</span>
+        Encender
+      </button>
+
+      <button
+        id="btn-off"
+        class="teacher-btn teacher-btn-off"
+        onclick="teacherPower('off')"
+        {% if projector.status in ('off', 'cooling', 'unknown') %}disabled{% endif %}
+        data-projector-id="{{ projector.id }}"
+        data-classroom="{{ classroom_number }}"
+      >
+        <span class="teacher-btn-icon">&#9646;&#9646;</span>
+        Apagar
+      </button>
+    </div>
+
+    <p class="teacher-hint">
+      Modelo: {{ projector.brand or '' }} {{ projector.model or '—' }}
+      &nbsp;|&nbsp; IP: {{ projector.current_ip or '—' }}
+    </p>
+    {% endif %}
+
+  </div>
+
+  {% if projector and not error %}
+  <script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+  {% endif %}
+</body>
+</html>

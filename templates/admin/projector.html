@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Proyector {{ projector.id }} — ProyControl{% endblock %}
+
+{% block nav %}
+  <a href="{{ url_for('admin.dashboard') }}" class="nav-link">&#8592; Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>
+    <span class="status-dot-lg status-{{ projector.status or 'unknown' }}"></span>
+    {{ projector.classroom_name or 'Proyector sin aula' }}
+  </h1>
+  <span class="badge-status status-{{ projector.status or 'unknown' }}" id="status-badge">
+    {{ {'on':'Encendido','off':'Apagado','cooling':'Enfriando','warming':'Calentando'}.get(projector.status, 'Desconocido') }}
+  </span>
+</div>
+
+<div id="action-result" class="alert" style="display:none"></div>
+
+<div class="detail-grid">
+
+  <!-- Info del proyector -->
+  <section class="detail-card">
+    <h2>Información</h2>
+    <table class="info-table">
+      <tr><th>ID</th><td>{{ projector.id }}</td></tr>
+      <tr><th>IP actual</th><td class="mono">{{ projector.current_ip or '—' }}</td></tr>
+      <tr><th>MAC address</th><td class="mono" id="mac-display">{{ projector.mac_address or '—' }}</td></tr>
+      <tr><th>Fabricante</th><td>{{ projector.brand or '—' }}</td></tr>
+      <tr><th>Modelo</th><td>{{ projector.model or '—' }}</td></tr>
+      <tr><th>Nombre PJLink</th><td class="mono">{{ projector.pjlink_name or '—' }}</td></tr>
+      <tr><th>Último visto</th><td>{{ projector.last_seen or '—' }}</td></tr>
+    </table>
+  </section>
+
+  <!-- Controles de energía -->
+  <section class="detail-card">
+    <h2>Control de energía</h2>
+    <div class="power-controls">
+      <button class="btn btn-on btn-large"
+              onclick="powerAction({{ projector.id }}, 'on', true)">
+        &#9654; Encender
+      </button>
+      <button class="btn btn-off btn-large"
+              onclick="powerAction({{ projector.id }}, 'off', true)">
+        &#9646;&#9646; Apagar
+      </button>
+    </div>
+    <button class="btn btn-secondary mt-1"
+            onclick="refreshStatus({{ projector.id }}, true)">
+      &#8635; Actualizar estado
+    </button>
+  </section>
+
+  <!-- Asignar a aula -->
+  <section class="detail-card">
+    <h2>Asignar a aula</h2>
+    <form id="form-assign" onsubmit="assignClassroom(event, {{ projector.id }})">
+      <label for="sel-classroom">Aula:</label>
+      <select id="sel-classroom" class="form-select">
+        <option value="">— Sin asignar —</option>
+        {% for campus_name, classrooms in classrooms_by_campus.items() %}
+          {% if classrooms %}
+          <optgroup label="{{ campus_name }}">
+            {% for c in classrooms %}
+            <option value="{{ c.id }}"
+              {% if projector.classroom_id == c.id %}selected{% endif %}>
+              {{ c.display_name }} ({{ c.number }})
+            </option>
+            {% endfor %}
+          </optgroup>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary mt-1">Guardar asignación</button>
+    </form>
+  </section>
+
+  <!-- Actualizar MAC -->
+  <section class="detail-card">
+    <h2>Actualizar MAC</h2>
+    <p class="hint">Usar solo al reemplazar el hardware del proyector.</p>
+    <form id="form-mac" onsubmit="updateMac(event, {{ projector.id }})">
+      <label for="inp-mac">Nueva MAC:</label>
+      <input type="text" id="inp-mac" class="form-input"
+             placeholder="AA:BB:CC:DD:EE:FF"
+             pattern="^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$"
+             value="{{ projector.mac_address or '' }}" />
+      <button type="submit" class="btn btn-warning mt-1">Actualizar MAC</button>
+    </form>
+  </section>
+
+</div>
+
+<!-- Historial de eventos -->
+<section class="detail-card mt-2">
+  <h2>Historial de escaneo</h2>
+  {% if scan_log %}
+  <div class="table-scroll">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Fecha/Hora</th>
+          <th>IP</th>
+          <th>MAC</th>
+          <th>Evento</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in scan_log %}
+        <tr class="log-event-{{ entry.event }}">
+          <td class="mono">{{ entry.timestamp }}</td>
+          <td class="mono">{{ entry.ip }}</td>
+          <td class="mono">{{ entry.mac_address or '—' }}</td>
+          <td>
+            <span class="log-badge log-{{ entry.event }}">{{ entry.event }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-msg">No hay eventos registrados aún.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}
