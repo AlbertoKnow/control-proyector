@@ -110,6 +110,12 @@ function applyStatusToCard(projectorId, status) {
 
   if (card) {
     card.className = `projector-card status-${status}`;
+
+    // Actualizar estado habilitado/deshabilitado de los botones
+    const btnOn  = card.querySelector('.btn-on');
+    const btnOff = card.querySelector('.btn-off');
+    if (btnOn)  btnOn.disabled  = ['on', 'warming'].includes(status);
+    if (btnOff) btnOff.disabled = ['off', 'cooling', 'unknown'].includes(status);
   }
   if (statusEl) {
     statusEl.textContent = STATUS_LABELS[status] || status;
