@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS projectors (
     FOREIGN KEY (classroom_id) REFERENCES classrooms(id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_projectors_pjlink_name
+    ON projectors(pjlink_name) WHERE pjlink_name IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS scan_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -228,14 +231,17 @@ def create_projector(
     with get_db() as conn:
         cursor = conn.execute(
             """
-            INSERT INTO projectors
+            INSERT OR IGNORE INTO projectors
                 (classroom_id, mac_address, current_ip, brand, model, pjlink_name, last_seen, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (classroom_id, mac_address, current_ip, brand, model, pjlink_name,
              datetime.now(), status),
         )
-        logger.info("Proyector registrado: MAC=%s IP=%s", mac_address, current_ip)
+        if cursor.rowcount == 0:
+            logger.debug("Proyector con pjlink_name=%s ya existe, ignorado", pjlink_name)
+        else:
+            logger.info("Proyector registrado: MAC=%s IP=%s pjlink=%s", mac_address, current_ip, pjlink_name)
         return cursor.lastrowid
 
 
