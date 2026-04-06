@@ -9,8 +9,8 @@ DEFAULT_TIMEOUT: int = 5          # segundos para conexiones PJLink
 SCAN_TIMEOUT: int = 2             # segundos para detección rápida en escaneo
 
 # --- Escaneo periódico ---
-SCAN_INTERVAL_SECONDS: int = 300  # cada 5 minutos
-AUTO_SCAN_ON_STARTUP: bool = False  # True = escaneo automático al iniciar
+SCAN_INTERVAL_SECONDS: int = 1800  # cada 30 minutos
+AUTO_SCAN_ON_STARTUP: bool = True   # escaneo automático activado
 
 # --- Red / subredes de proyectores ---
 SUBNETS: list[str] = [
