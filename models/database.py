@@ -193,6 +193,15 @@ def get_projector_by_mac(mac_address: str) -> sqlite3.Row | None:
         ).fetchone()
 
 
+def get_projector_by_pjlink_name(pjlink_name: str) -> sqlite3.Row | None:
+    """Busca un proyector por su nombre PJLink (número de serie). Case-insensitive."""
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT * FROM projectors WHERE UPPER(pjlink_name) = UPPER(?)",
+            (pjlink_name,),
+        ).fetchone()
+
+
 def get_projector_by_classroom(classroom_id: int) -> sqlite3.Row | None:
     """Retorna el proyector asignado a un aula, o None si no hay ninguno."""
     with get_db() as conn:
@@ -349,10 +358,12 @@ def get_scan_log(limit: int = 100) -> list[sqlite3.Row]:
 
 def reconcile_scan_results(scan_results: list) -> dict:
     """
-    Procesa los resultados de un escaneo y actualiza la base de datos:
-    - Proyector nuevo con MAC conocida → actualiza IP si cambió
-    - Proyector nuevo con MAC desconocida → lo registra como no asignado
-    - Registra eventos en scan_log
+    Procesa los resultados de un escaneo y actualiza la base de datos.
+
+    Prioridad de identificación del proyector:
+      1. MAC address (si está disponible)
+      2. pjlink_name / número de serie (único y persistente)
+    Si no se encuentra por ninguno → se registra como nuevo.
 
     Args:
         scan_results: Lista de DiscoveredProjector del scanner.
@@ -365,9 +376,13 @@ def reconcile_scan_results(scan_results: list) -> dict:
     for discovered in scan_results:
         existing = None
 
-        # Buscar por MAC si la tenemos
+        # 1. Buscar por MAC
         if discovered.mac_address:
             existing = get_projector_by_mac(discovered.mac_address)
+
+        # 2. Fallback: buscar por pjlink_name (número de serie)
+        if existing is None and discovered.pjlink_name:
+            existing = get_projector_by_pjlink_name(discovered.pjlink_name)
 
         if existing:
             # Proyector ya conocido

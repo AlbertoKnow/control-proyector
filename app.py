@@ -6,7 +6,7 @@ Inicializa Flask, la base de datos, los blueprints y el scheduler.
 import logging
 from flask import Flask, redirect, url_for
 
-from config import SECRET_KEY, DEBUG
+from config import SECRET_KEY, DEBUG, AUTO_SCAN_ON_STARTUP
 from models.database import init_db
 from routes.api import api_bp
 from routes.admin import admin_bp
@@ -42,11 +42,12 @@ def create_app() -> Flask:
     def index():
         return redirect(url_for("admin.dashboard"))
 
-    # Iniciar escaneo periódico automático
+    # Iniciar scheduler solo si está habilitado en config
     # use_reloader=True lanza dos procesos en debug → evitar doble scheduler
     import os
-    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        scheduler.start()
+    if AUTO_SCAN_ON_STARTUP:
+        if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+            scheduler.start()
 
     logger.info("ProyControl UTP iniciado")
     return app
