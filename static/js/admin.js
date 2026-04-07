@@ -136,6 +136,47 @@ async function refreshAllStatuses() {
 }
 
 // ---------------------------------------------------------------------------
+// Encendido / apagado masivo
+// ---------------------------------------------------------------------------
+
+/**
+ * Enciende o apaga todos los proyectores a la vez.
+ * @param {'on'|'off'} action
+ */
+async function bulkPower(action) {
+  const label = action === 'on' ? 'encender' : 'apagar';
+  if (!confirm(`¿Seguro que deseas ${label} todos los proyectores?`)) return;
+
+  const btnOn  = document.getElementById('btn-on-all');
+  const btnOff = document.getElementById('btn-off-all');
+  if (btnOn)  btnOn.disabled  = true;
+  if (btnOff) btnOff.disabled = true;
+
+  showAlert('scan-result', `${action === 'on' ? 'Encendiendo' : 'Apagando'} todos los proyectores…`, 'info', 0);
+
+  try {
+    const res  = await fetch(`/api/projectors/power-${action}-all`, { method: 'POST' });
+    const data = await res.json();
+
+    const msg = `${action === 'on' ? 'Encendido' : 'Apagado'} masivo: `
+              + `${data.success} exitosos, ${data.failed} fallidos de ${data.total} proyectores.`;
+    showAlert('scan-result', msg, data.failed === 0 ? 'success' : 'error', 8000);
+
+    // Actualizar estado visual de todas las tarjetas
+    const newStatus = action === 'on' ? 'warming' : 'cooling';
+    document.querySelectorAll('.projector-card[id^="card-"]').forEach(card => {
+      const id = parseInt(card.id.replace('card-', ''), 10);
+      applyStatusToCard(id, newStatus);
+    });
+  } catch (err) {
+    showAlert('scan-result', 'Error de conexión durante la operación masiva', 'error', 6000);
+  } finally {
+    if (btnOn)  btnOn.disabled  = false;
+    if (btnOff) btnOff.disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Escaneo de red
 // ---------------------------------------------------------------------------
 

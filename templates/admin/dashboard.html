@@ -11,6 +11,12 @@
   <h1>Panel de Administración</h1>
   <div class="header-actions">
     <span class="badge-total">{{ total }} proyector{{ 'es' if total != 1 else '' }}</span>
+    <button id="btn-on-all" class="btn btn-on" onclick="bulkPower('on')">
+      &#9654; Encender todos
+    </button>
+    <button id="btn-off-all" class="btn btn-off" onclick="bulkPower('off')">
+      &#9646;&#9646; Apagar todos
+    </button>
     <button id="btn-scan" class="btn btn-primary" onclick="triggerScan()">
       <span id="scan-icon">&#128269;</span> Escanear red
     </button>

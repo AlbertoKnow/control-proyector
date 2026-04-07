@@ -19,6 +19,7 @@ from models.database import (
     update_projector_status,
 )
 from services.pjlink import get_projector_status, send_power_command
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,45 @@ def power_off_projector(projector_id: int):
     if result["success"]:
         update_projector_status(projector_id, "cooling")
     return jsonify({"id": projector_id, "ip": ip, **result})
+
+
+@api_bp.post("/projectors/power-on-all")
+def power_on_all():
+    """Enciende todos los proyectores con IP asignada en paralelo."""
+    return _bulk_power_action(turn_on=True)
+
+
+@api_bp.post("/projectors/power-off-all")
+def power_off_all():
+    """Apaga todos los proyectores con IP asignada en paralelo."""
+    return _bulk_power_action(turn_on=False)
+
+
+def _bulk_power_action(turn_on: bool):
+    """Ejecuta encendido/apagado en todos los proyectores concurrentemente."""
+    rows = get_all_projectors()
+    targets = [r for r in rows if r["current_ip"]]
+
+    results = {"success": 0, "failed": 0, "total": len(targets)}
+
+    def _action(row):
+        result = send_power_command(row["current_ip"], turn_on=turn_on)
+        if result["success"]:
+            new_status = "warming" if turn_on else "cooling"
+            update_projector_status(row["id"], new_status)
+        return result["success"]
+
+    with ThreadPoolExecutor(max_workers=30) as executor:
+        futures = [executor.submit(_action, row) for row in targets]
+        for future in as_completed(futures):
+            if future.result():
+                results["success"] += 1
+            else:
+                results["failed"] += 1
+
+    accion = "encendido" if turn_on else "apagado"
+    logger.info("Bulk %s: %d/%d exitosos", accion, results["success"], results["total"])
+    return jsonify(results)
 
 
 @api_bp.post("/projectors/<int:projector_id>/assign")
