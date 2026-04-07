@@ -77,10 +77,17 @@ def dashboard():
     if unassigned:
         grouped["Sin asignar"] = unassigned
 
+    # Contadores por estado
+    status_counts = {"on": 0, "off": 0, "warming": 0, "cooling": 0, "unknown": 0}
+    for p in projectors:
+        s = p["status"] if p["status"] in status_counts else "unknown"
+        status_counts[s] += 1
+
     return render_template(
         "admin/dashboard.html",
         grouped=grouped,
         total=len(projectors),
+        status_counts=status_counts,
     )
 
 

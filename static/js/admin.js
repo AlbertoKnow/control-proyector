@@ -59,9 +59,9 @@ async function powerAction(projectorId, action, detailPage = false) {
     if (data.success) {
       const label = action === 'on' ? 'Encendido' : 'Apagado';
       showAlert(alertId, `${label} correctamente (IP: ${data.ip})`, 'success');
-      // Actualizar estado visual sin recargar
       const newStatus = action === 'on' ? 'warming' : 'cooling';
       applyStatusToCard(projectorId, newStatus);
+      updateStatusCounters();
     } else {
       showAlert(alertId, `Error: ${data.error || 'No se pudo ejecutar el comando'}`, 'error');
     }
@@ -133,6 +133,29 @@ async function refreshAllStatuses() {
     return refreshStatus(id);
   });
   await Promise.allSettled(promises);
+  updateStatusCounters();
+}
+
+/**
+ * Cuenta los proyectores por estado leyendo las clases de las tarjetas
+ * y actualiza los contadores en la barra superior.
+ */
+function updateStatusCounters() {
+  const counts = { on: 0, off: 0, warming: 0, cooling: 0, unknown: 0 };
+
+  document.querySelectorAll('.projector-card[id^="card-"]').forEach(card => {
+    for (const status of Object.keys(counts)) {
+      if (card.classList.contains(`status-${status}`)) {
+        counts[status]++;
+        break;
+      }
+    }
+  });
+
+  for (const [status, count] of Object.entries(counts)) {
+    const el = document.getElementById(`count-${status}`);
+    if (el) el.textContent = count;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -168,6 +191,7 @@ async function bulkPower(action) {
       const id = parseInt(card.id.replace('card-', ''), 10);
       applyStatusToCard(id, newStatus);
     });
+    updateStatusCounters();
   } catch (err) {
     showAlert('scan-result', 'Error de conexión durante la operación masiva', 'error', 6000);
   } finally {

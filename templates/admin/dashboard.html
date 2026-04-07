@@ -25,6 +25,29 @@
 
 <div id="scan-result" class="alert" style="display:none"></div>
 
+<div class="status-bar" id="status-bar">
+  <div class="status-counter status-on">
+    <span class="counter-number" id="count-on">{{ status_counts.on }}</span>
+    <span class="counter-label">Encendidos</span>
+  </div>
+  <div class="status-counter status-off">
+    <span class="counter-number" id="count-off">{{ status_counts.off }}</span>
+    <span class="counter-label">Apagados</span>
+  </div>
+  <div class="status-counter status-warming">
+    <span class="counter-number" id="count-warming">{{ status_counts.warming }}</span>
+    <span class="counter-label">Calentando</span>
+  </div>
+  <div class="status-counter status-cooling">
+    <span class="counter-number" id="count-cooling">{{ status_counts.cooling }}</span>
+    <span class="counter-label">Enfriando</span>
+  </div>
+  <div class="status-counter status-unknown">
+    <span class="counter-number" id="count-unknown">{{ status_counts.unknown }}</span>
+    <span class="counter-label">Desconocido</span>
+  </div>
+</div>
+
 {% for campus_name, projectors in grouped.items() %}
 <section class="campus-section">
   <h2 class="campus-title">
