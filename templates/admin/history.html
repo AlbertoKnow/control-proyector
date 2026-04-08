@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Historial de encendidos — ProyControl{% endblock %}
+{% block nav %}
+  <a href="{{ url_for('admin.dashboard') }}" class="nav-link">&#8592; Dashboard</a>
+  <a href="{{ url_for('admin.power_history') }}" class="nav-link active">Historial</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Historial de encendidos</h1>
+  <span class="badge-total">{{ log|length }} eventos</span>
+</div>
+
+{% if log %}
+<div class="detail-card">
+  <div class="table-scroll">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Fecha/Hora</th>
+          <th>Proyector</th>
+          <th>IP</th>
+          <th>Aula</th>
+          <th>Acción</th>
+          <th>Origen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in log %}
+        <tr>
+          <td class="mono">{{ e.timestamp }}</td>
+          <td class="mono">{{ e.pjlink_name or '—' }}</td>
+          <td class="mono">{{ e.ip or '—' }}</td>
+          <td>{{ e.classroom_number or '—' }}</td>
+          <td>
+            <span class="log-badge {% if e.action == 'on' %}log-discovered{% else %}log-offline{% endif %}">
+              {{ 'Encendido' if e.action == 'on' else 'Apagado' }}
+            </span>
+          </td>
+          <td>
+            <span class="log-badge log-{{ e.triggered_by }}">{{ e.triggered_by }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<p class="empty-msg">No hay eventos registrados aún.</p>
+{% endif %}
+{% endblock %}

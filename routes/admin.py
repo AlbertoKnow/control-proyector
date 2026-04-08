@@ -14,6 +14,7 @@ from models.database import (
     get_all_campuses,
     get_classrooms,
     get_scan_log,
+    get_power_log,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,4 +115,30 @@ def projector_detail(projector_id: int):
         projector=dict(projector),
         classrooms_by_campus=classrooms_by_campus,
         scan_log=[dict(e) for e in log],
+    )
+
+
+@admin_bp.get("/history")
+@login_required
+def power_history():
+    """Página de historial completo de encendidos y apagados."""
+    log = get_power_log(limit=200)
+    return render_template("admin/history.html", log=[dict(e) for e in log])
+
+
+@admin_bp.get("/assign")
+@login_required
+def bulk_assign():
+    """Página de asignación masiva de proyectores a aulas."""
+    projectors = get_all_projectors()
+    campuses = get_all_campuses()
+    classrooms_by_campus = {}
+    for campus in campuses:
+        classrooms_by_campus[campus["name"]] = [
+            dict(c) for c in get_classrooms(campus["id"])
+        ]
+    return render_template(
+        "admin/assign.html",
+        projectors=[dict(p) for p in projectors],
+        classrooms_by_campus=classrooms_by_campus,
     )

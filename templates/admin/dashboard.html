@@ -4,6 +4,8 @@
 
 {% block nav %}
   <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">Dashboard</a>
+  <a href="{{ url_for('admin.bulk_assign') }}" class="nav-link">Asignar aulas</a>
+  <a href="{{ url_for('admin.power_history') }}" class="nav-link">Historial</a>
 {% endblock %}
 
 {% block content %}
@@ -48,6 +50,19 @@
   </div>
 </div>
 
+<div class="filter-bar">
+  <input type="text" id="search-input" class="form-input filter-search"
+         placeholder="Buscar por aula, IP, modelo..." oninput="filterCards()">
+  <div class="filter-btns">
+    <button class="filter-btn active" data-status="all" onclick="setStatusFilter('all', this)">Todos</button>
+    <button class="filter-btn" data-status="on" onclick="setStatusFilter('on', this)">Encendidos</button>
+    <button class="filter-btn" data-status="off" onclick="setStatusFilter('off', this)">Apagados</button>
+    <button class="filter-btn" data-status="warming cooling" onclick="setStatusFilter('warming cooling', this)">En transición</button>
+    <button class="filter-btn" data-status="unknown" onclick="setStatusFilter('unknown', this)">Desconocidos</button>
+  </div>
+  <span id="filter-count" class="filter-count"></span>
+</div>
+
 {% for campus_name, projectors in grouped.items() %}
 <section class="campus-section">
   <h2 class="campus-title">
@@ -58,7 +73,9 @@
   {% if projectors %}
   <div class="projector-grid">
     {% for p in projectors %}
-    <div class="projector-card status-{{ p.status or 'unknown' }}" id="card-{{ p.id }}">
+    <div class="projector-card status-{{ p.status or 'unknown' }}" id="card-{{ p.id }}"
+         data-search="{{ (p.classroom_name or '') ~ ' ' ~ (p.current_ip or '') ~ ' ' ~ (p.brand or '') ~ ' ' ~ (p.model or '') ~ ' ' ~ (p.pjlink_name or '') | lower }}"
+         data-last-seen="{{ p.last_seen or '' }}">
       <div class="card-header">
         <span class="status-dot"></span>
         <span class="card-title">
@@ -86,6 +103,10 @@
           <span class="status-label" id="status-{{ p.id }}">
             {{ {'on':'Encendido','off':'Apagado','cooling':'Enfriando','warming':'Calentando'}.get(p.status, 'Desconocido') }}
           </span>
+        </div>
+        <div class="card-info">
+          <span class="info-label">Último visto</span>
+          <span class="last-seen-label" data-ts="{{ p.last_seen or '' }}">—</span>
         </div>
       </div>
 

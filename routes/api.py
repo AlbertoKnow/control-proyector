@@ -17,6 +17,7 @@ from models.database import (
     assign_projector_to_classroom,
     update_projector_mac,
     update_projector_status,
+    log_power_event,
 )
 from services.pjlink import get_projector_status, send_power_command
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -100,6 +101,7 @@ def power_on_projector(projector_id: int):
     result = send_power_command(ip, turn_on=True)
     if result["success"]:
         update_projector_status(projector_id, "warming")
+        log_power_event(projector_id, "on", ip=ip, triggered_by="admin")
     return jsonify({"id": projector_id, "ip": ip, **result})
 
 
@@ -117,6 +119,7 @@ def power_off_projector(projector_id: int):
     result = send_power_command(ip, turn_on=False)
     if result["success"]:
         update_projector_status(projector_id, "cooling")
+        log_power_event(projector_id, "off", ip=ip, triggered_by="admin")
     return jsonify({"id": projector_id, "ip": ip, **result})
 
 
@@ -144,6 +147,8 @@ def _bulk_power_action(turn_on: bool):
         if result["success"]:
             new_status = "warming" if turn_on else "cooling"
             update_projector_status(row["id"], new_status)
+            log_power_event(row["id"], "on" if turn_on else "off",
+                           ip=row["current_ip"], triggered_by="bulk")
         return result["success"]
 
     with ThreadPoolExecutor(max_workers=30) as executor:
@@ -234,6 +239,16 @@ def scan_log():
     return jsonify([dict(r) for r in rows])
 
 
+@api_bp.get("/power-log")
+def power_log():
+    """Retorna el historial de eventos de energía (últimos 200)."""
+    from models.database import get_power_log
+    projector_id = request.args.get("projector_id", type=int)
+    limit = request.args.get("limit", 200, type=int)
+    rows = get_power_log(projector_id=projector_id, limit=limit)
+    return jsonify([dict(r) for r in rows])
+
+
 # ---------------------------------------------------------------------------
 # Aulas — docentes
 # ---------------------------------------------------------------------------
@@ -297,6 +312,9 @@ def _classroom_power_action(classroom_number: str, turn_on: bool):
     if result["success"]:
         new_status = "warming" if turn_on else "cooling"
         update_projector_status(projector["id"], new_status)
+        action_str = "on" if turn_on else "off"
+        log_power_event(projector["id"], action_str, ip=ip,
+                       classroom_number=classroom_number, triggered_by="teacher")
 
     return jsonify({
         "classroom_number": classroom_number,

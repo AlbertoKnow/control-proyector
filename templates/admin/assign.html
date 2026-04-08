@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Asignación masiva — ProyControl{% endblock %}
+{% block nav %}
+  <a href="{{ url_for('admin.dashboard') }}" class="nav-link">&#8592; Dashboard</a>
+  <a href="{{ url_for('admin.bulk_assign') }}" class="nav-link active">Asignar aulas</a>
+  <a href="{{ url_for('admin.power_history') }}" class="nav-link">Historial</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Asignación masiva</h1>
+  <button class="btn btn-primary" onclick="saveAllAssignments()">&#10003; Guardar todos los cambios</button>
+</div>
+
+<div id="assign-result" class="alert" style="display:none"></div>
+
+<div class="detail-card">
+  <p class="hint">Asigna cada proyector a su aula. Solo se guardan los que hayas modificado.</p>
+
+  <div class="table-scroll">
+    <table class="log-table" id="assign-table">
+      <thead>
+        <tr>
+          <th>Serial (PJLink)</th>
+          <th>IP actual</th>
+          <th>Marca / Modelo</th>
+          <th>Estado</th>
+          <th>Aula asignada</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projectors %}
+        <tr data-projector-id="{{ p.id }}" data-original="{{ p.classroom_id or '' }}">
+          <td class="mono">{{ p.pjlink_name or '—' }}</td>
+          <td class="mono">{{ p.current_ip or '—' }}</td>
+          <td>{{ p.brand or '' }} {{ p.model or '—' }}</td>
+          <td><span class="status-dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:
+            {% if p.status == 'on' %}#22c55e
+            {% elif p.status == 'off' %}#ef4444
+            {% elif p.status in ['warming','cooling'] %}#f59e0b
+            {% else %}#9ca3af{% endif %}"></span>
+            {{ {'on':'Encendido','off':'Apagado','warming':'Calentando','cooling':'Enfriando'}.get(p.status,'Desconocido') }}
+          </td>
+          <td>
+            <select class="form-select assign-select" data-projector-id="{{ p.id }}">
+              <option value="">— Sin asignar —</option>
+              {% for campus_name, classrooms in classrooms_by_campus.items() %}
+                {% if classrooms %}
+                <optgroup label="{{ campus_name }}">
+                  {% for c in classrooms %}
+                  <option value="{{ c.id }}" {% if p.classroom_id == c.id %}selected{% endif %}>
+                    {{ c.display_name }} ({{ c.number }})
+                  </option>
+                  {% endfor %}
+                </optgroup>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveAllAssignments() {
+  const selects = document.querySelectorAll('.assign-select');
+  const changes = [];
+
+  selects.forEach(sel => {
+    const row = sel.closest('tr');
+    const original = row.dataset.original;
+    const current = sel.value;
+    if (String(current) !== String(original)) {
+      changes.push({
+        projector_id: parseInt(sel.dataset.projectorId),
+        classroom_id: current ? parseInt(current) : null,
+      });
+    }
+  });
+
+  if (changes.length === 0) {
+    showAssignAlert('No hay cambios para guardar.', 'info');
+    return;
+  }
+
+  let success = 0, failed = 0;
+  for (const change of changes) {
+    try {
+      const res = await fetch(`/api/projectors/${change.projector_id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classroom_id: change.classroom_id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        success++;
+        // Actualizar data-original para no re-enviar
+        const row = document.querySelector(`tr[data-projector-id="${change.projector_id}"]`);
+        if (row) row.dataset.original = change.classroom_id ?? '';
+      } else {
+        failed++;
+      }
+    } catch {
+      failed++;
+    }
+  }
+
+  const msg = `${success} asignaciones guardadas` + (failed > 0 ? `, ${failed} fallidas.` : '.');
+  showAssignAlert(msg, failed > 0 ? 'error' : 'success');
+}
+
+function showAssignAlert(msg, type) {
+  const el = document.getElementById('assign-result');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (type !== 'error') setTimeout(() => el.style.display = 'none', 5000);
+}
+</script>
+{% endblock %}

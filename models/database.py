@@ -53,6 +53,16 @@ CREATE TABLE IF NOT EXISTS scan_log (
     mac_address TEXT,
     event       TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS power_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    projector_id INTEGER NOT NULL,
+    action       TEXT NOT NULL,
+    ip           TEXT,
+    classroom_number TEXT,
+    triggered_by TEXT DEFAULT 'admin'
+);
 """
 
 _SEED = """
@@ -357,6 +367,49 @@ def get_scan_log(limit: int = 100) -> list[sqlite3.Row]:
     with get_db() as conn:
         return conn.execute(
             "SELECT * FROM scan_log ORDER BY timestamp DESC LIMIT ?", (limit,)
+        ).fetchall()
+
+
+# --- Power log ---
+
+def log_power_event(
+    projector_id: int,
+    action: str,
+    ip: str | None = None,
+    classroom_number: str | None = None,
+    triggered_by: str = "admin",
+) -> None:
+    """Registra un evento de encendido o apagado en el historial."""
+    with get_db() as conn:
+        conn.execute(
+            """INSERT INTO power_log (projector_id, action, ip, classroom_number, triggered_by)
+               VALUES (?, ?, ?, ?, ?)""",
+            (projector_id, action, ip, classroom_number, triggered_by),
+        )
+    logger.debug("Power event: %s proyector %d (%s)", action, projector_id, triggered_by)
+
+
+def get_power_log(projector_id: int | None = None, limit: int = 200) -> list[sqlite3.Row]:
+    """
+    Retorna el historial de eventos de energía.
+    Si se indica projector_id, filtra por ese proyector.
+    """
+    with get_db() as conn:
+        if projector_id is not None:
+            return conn.execute(
+                """SELECT pl.*, p.pjlink_name, p.brand, p.model
+                   FROM power_log pl
+                   LEFT JOIN projectors p ON pl.projector_id = p.id
+                   WHERE pl.projector_id = ?
+                   ORDER BY pl.timestamp DESC LIMIT ?""",
+                (projector_id, limit),
+            ).fetchall()
+        return conn.execute(
+            """SELECT pl.*, p.pjlink_name, p.brand, p.model, p.classroom_id
+               FROM power_log pl
+               LEFT JOIN projectors p ON pl.projector_id = p.id
+               ORDER BY pl.timestamp DESC LIMIT ?""",
+            (limit,),
         ).fetchall()
 
 

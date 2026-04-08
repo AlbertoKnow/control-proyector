@@ -307,3 +307,69 @@ async function updateMac(event, projectorId) {
     showAlert('action-result', 'Error de conexión con el servidor', 'error');
   }
 }
+
+// ---------------------------------------------------------------------------
+// Búsqueda y filtro
+// ---------------------------------------------------------------------------
+
+let _activeStatusFilter = 'all';
+
+function setStatusFilter(status, btn) {
+  _activeStatusFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+  const statuses = _activeStatusFilter === 'all' ? [] : _activeStatusFilter.split(' ');
+
+  let visible = 0;
+  document.querySelectorAll('.projector-card[id^="card-"]').forEach(card => {
+    const matchSearch = !query || (card.dataset.search || '').includes(query);
+    const matchStatus = statuses.length === 0 || statuses.some(s => card.classList.contains(`status-${s}`));
+    const show = matchSearch && matchStatus;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // Ocultar secciones de campus que quedaron vacías
+  document.querySelectorAll('.campus-section').forEach(section => {
+    const anyVisible = Array.from(section.querySelectorAll('.projector-card'))
+      .some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+
+  const countEl = document.getElementById('filter-count');
+  if (countEl) {
+    countEl.textContent = query || statuses.length ? `${visible} resultado(s)` : '';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Indicador de última vez visto
+// ---------------------------------------------------------------------------
+
+function formatLastSeen(ts) {
+  if (!ts) return { text: '—', cls: '' };
+  const diff = (Date.now() - new Date(ts).getTime()) / 1000 / 60; // minutos
+  if (diff < 60)        return { text: `Hace ${Math.round(diff)} min`,   cls: 'last-seen-ok' };
+  if (diff < 60 * 24)   return { text: `Hace ${Math.round(diff/60)} h`,  cls: 'last-seen-warning' };
+  const days = Math.round(diff / 60 / 24);
+  return { text: `Hace ${days} día(s)`, cls: 'last-seen-danger' };
+}
+
+function refreshLastSeenLabels() {
+  document.querySelectorAll('.last-seen-label[data-ts]').forEach(el => {
+    const { text, cls } = formatLastSeen(el.dataset.ts);
+    el.textContent = text;
+    el.className = `last-seen-label ${cls}`;
+  });
+}
+
+// Inicializar al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  refreshLastSeenLabels();
+  updateStatusCounters();
+});
