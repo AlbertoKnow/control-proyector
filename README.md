@@ -59,9 +59,13 @@ python app.py
 ```
 http://<IP-servidor>:5000/admin
 ```
-- Lista todos los proyectores por campus con estado en tiempo real
+- Contadores de estado en tiempo real (encendidos, apagados, en transición)
+- Búsqueda y filtro por aula, IP, modelo o estado
+- Indicador de última vez visto por proyector
+- Encender / apagar proyectores individuales o todos a la vez
 - Escaneo manual de red
-- Asignación de proyectores a aulas
+- Asignación masiva de proyectores a aulas (`/admin/assign`)
+- Historial de encendidos y apagados (`/admin/history`)
 
 ### Vista de control
 ```
@@ -84,12 +88,12 @@ control-proyector/
 │   ├── scanner.py          # Escáner de red con detección por número de serie
 │   └── scheduler.py        # Escaneo periódico automático en hilo daemon
 ├── routes/
-│   ├── api.py              # REST API (12 endpoints)
+│   ├── api.py              # REST API (16 endpoints)
 │   ├── admin.py            # Panel de administración
 │   └── teacher.py          # Vista de control
 ├── templates/
 │   ├── base.html
-│   ├── admin/              # Dashboard y detalle de proyector
+│   ├── admin/              # Dashboard, detalle, asignación masiva e historial
 │   └── teacher/            # Control simple encender/apagar
 ├── static/
 │   ├── css/                # Estilos compartidos + vista de control
@@ -115,6 +119,9 @@ control-proyector/
 | POST | `/api/classroom/:number/power-on` | Encender por número de aula |
 | POST | `/api/classroom/:number/power-off` | Apagar por número de aula |
 | GET | `/api/scheduler/status` | Estado del scanner automático |
+| POST | `/api/projectors/power-on-all` | Encender todos |
+| POST | `/api/projectors/power-off-all` | Apagar todos |
+| GET | `/api/power-log` | Historial de encendidos/apagados |
 
 ## Configuración de red requerida
 
